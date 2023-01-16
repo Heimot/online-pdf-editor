@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react'
-import { PDFData, PDFText, PDFImage } from '../model'
+import { PDFData, PDFText, PDFImage, Fonts, GetFonts } from '../model'
 import { Table, Thead, Tbody, Tr, Th, Td } from 'react-super-responsive-table';
 import 'react-super-responsive-table/dist/SuperResponsiveTableStyle.css';
 import './PDFStyles.css';
-import TableData from './TableData';
+import PDFTableTextData from './PDFTableTextData';
+import PDFTableImageData from './PDFTableImageData';
 
 interface Props {
     pdfData: PDFData | null;
-    setPdfData: Function;
+    setPdfData: (value: PDFData | any) => void;
+    getFonts: GetFonts;
 }
 
 interface Acc {
@@ -20,23 +22,102 @@ interface PDFPropData {
     data: Acc[];
 }
 
-const PDFEditor: React.FC<Props> = ({ pdfData, setPdfData }) => {
+const PDFEditor: React.FC<Props> = ({ pdfData, setPdfData, getFonts }) => {
+    const [fonts, setFonts] = useState<Fonts[]>([]);
+
+    useEffect(() => {
+        if (!getFonts) return;
+        const getFontData = async () => {
+            let data = [];
+            data = await Object.keys(getFonts).reduce((acc: Fonts[], curr) => {
+                acc.push({ name: curr, fontTypes: getFonts[curr] })
+                return acc;
+            }, [])
+            setFonts(data);
+        }
+        getFontData();
+    }, [])
+
     const updatePDFData = (value: string | number | boolean, name: string) => {
         if (name === "orderDefault" || name === "stickerDefault") {
+            // Since select cannot return boolean values we need to change the text to a boolean in here....
             if (value === "true") {
                 value = true;
             } else if (value === "false") {
                 value = false;
             }
         }
+        console.log(value)
         setPdfData((prevState: PDFData[]) => ({ ...prevState, [name]: value }))
     }
 
-    const updateTextData = (_id: string, text: string, font: string, fontType: string, fontSize: string, xPosition: number, yPosition: number) => {
+    const updateTextData = (_id: string, text: string, font: string, fontType: string, fontSize: number, xPosition: number, yPosition: number) => {
         let data = pdfData?.PDFText?.map((data) =>
             data._id === _id ? { ...data, text, font, fontType, fontSize, xPosition, yPosition } : data
         )
         setPdfData({ ...pdfData, PDFText: data });
+    }
+
+    const updateImageData = (_id: string, imageURL: string, height: number, width: number, xPosition: number, yPosition: number) => {
+        let data = pdfData?.PDFImage?.map((data) =>
+            data._id === _id ? { ...data, imageURL, height, width, xPosition, yPosition } : data
+        )
+        setPdfData({ ...pdfData, PDFImage: data });
+    }
+
+    const removeTextData = (_id: string) => {
+        let data = pdfData?.PDFText.filter((data) => {
+            return data._id !== _id;
+        })
+        setPdfData({ ...pdfData, PDFText: data })
+        fetch('http://localhost:5000/pdftext/delete_pdf_text', {
+            method: "DELETE",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYzYmJiMjdkMDFlOGQxZjZlMzVmNTFjYSIsImlhdCI6MTY3MzMzMDg3OSwiZXhwIjoxNjc5MzMwODc5fQ.MfhU7s4GCTnV3c6PRd6pSlOcdIBZtmBD_SzrEaFXbkc'
+            },
+            body: JSON.stringify({
+                currentUserId: "63bbb27d01e8d1f6e35f51ca",
+                PDFId: pdfData?._id,
+                _id: _id
+            })
+        })
+            .then((res) => res.json())
+            .then((response) => console.log(response))
+    }
+
+    const removeImageData = (_id: string) => {
+        let data = pdfData?.PDFImage.filter((data) => {
+            return data._id !== _id;
+        })
+        setPdfData({ ...pdfData, PDFImage: data })
+        fetch('http://localhost:5000/pdfimage/delete_pdf_image', {
+            method: "DELETE",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYzYmJiMjdkMDFlOGQxZjZlMzVmNTFjYSIsImlhdCI6MTY3MzMzMDg3OSwiZXhwIjoxNjc5MzMwODc5fQ.MfhU7s4GCTnV3c6PRd6pSlOcdIBZtmBD_SzrEaFXbkc'
+            },
+            body: JSON.stringify({
+                currentUserId: "63bbb27d01e8d1f6e35f51ca",
+                PDFId: pdfData?._id,
+                _id: _id
+            })
+        })
+            .then((res) => res.json())
+            .then((response) => console.log(response))
+
+    }
+
+    const addTextData = () => {
+        if (!pdfData) return;
+        setPdfData({ ...pdfData, PDFText: [...pdfData?.PDFText, { _id: Date.now(), text: "", font: "helvetica", fontType: "normal", fontSize: 10, xPosition: 0, yPosition: 0 }] })
+    }
+
+    const addImageData = () => {
+        if (!pdfData) return;
+        setPdfData({ ...pdfData, PDFImage: [...pdfData?.PDFImage, { _id: Date.now(), imageURL: "", height: 10, width: 10, xPosition: 0, yPosition: 0 }] })
     }
 
     const savePDF = async () => {
@@ -100,6 +181,8 @@ const PDFEditor: React.FC<Props> = ({ pdfData, setPdfData }) => {
     return (
         <div>
             <div>
+                <span>PDF Name</span>
+                <input name="PDFName" defaultValue={pdfData?.PDFName} onChange={(e) => updatePDFData(e.target.value, e.target.name)}></input>
                 <span>Width</span>
                 <input type="number" name="width" defaultValue={pdfData?.width} onChange={(e) => updatePDFData(Number(e.target.value), e.target.name)}></input>
                 <span>Height</span>
@@ -120,7 +203,7 @@ const PDFEditor: React.FC<Props> = ({ pdfData, setPdfData }) => {
                     <option value="false">False</option>
                 </select>
             </div>
-            <div className='editor__tables'>
+            <div >
                 <div>
                     <Table>
                         <Thead>
@@ -136,29 +219,35 @@ const PDFEditor: React.FC<Props> = ({ pdfData, setPdfData }) => {
                         <Tbody>
                             {pdfData?.PDFText.map((text) => {
                                 return (
-                                    <TableData key={text._id} text={text} update={(_id: string, text: string, font: string, fontType: string, fontSize: string, xPosition: number, yPosition: number) => updateTextData(_id, text, font, fontType, fontSize, xPosition, yPosition)} />
+                                    <PDFTableTextData key={text._id} text={text} fonts={fonts} getFonts={getFonts} removeTextData={(_id: string) => removeTextData(_id)}
+                                        updateTextData={(_id: string, text: string, font: string, fontType: string, fontSize: number, xPosition: number, yPosition: number) => updateTextData(_id, text, font, fontType, fontSize, xPosition, yPosition)} />
                                 )
                             })}
                         </Tbody>
                     </Table>
+                    <button onClick={() => addTextData()}>Add new text</button>
                 </div>
                 <div>
                     <Table>
                         <Thead>
                             <Tr>
-                                <Th>Event</Th>
-                                <Th>Date</Th>
-                                <Th>Location</Th>
+                                <Th>ImageURL</Th>
+                                <Th>Height</Th>
+                                <Th>Width</Th>
+                                <Th>xPosition</Th>
+                                <Th>yPosition</Th>
                             </Tr>
                         </Thead>
                         <Tbody>
-                            <Tr>
-                                <Td>Tablescon</Td>
-                                <Td>9 April 2019</Td>
-                                <Td>East Annex</Td>
-                            </Tr>
+                            {pdfData?.PDFImage.map((image) => {
+                                return (
+                                    <PDFTableImageData key={image._id} image={image} removeImageData={(_id: string) => removeImageData(_id)}
+                                        updateImageData={(_id: string, imageURL: string, height: number, width: number, xPosition: number, yPosition: number) => updateImageData(_id, imageURL, height, width, xPosition, yPosition)} />
+                                )
+                            })}
                         </Tbody>
                     </Table>
+                    <button onClick={() => addImageData()}>Add new image</button>
                 </div>
             </div>
             <button onClick={() => savePDF()}>Save PDF</button>
