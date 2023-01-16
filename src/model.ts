@@ -38,3 +38,13 @@ export interface PDFText {
     createdAt: Date;
     updatedAt: Date;
   }
+
+  export interface Fonts {
+    [key: string]: any;
+    name: string;
+    fontTypes: Object;
+}
+
+export interface GetFonts {
+  [key: string]: string[];
+}
