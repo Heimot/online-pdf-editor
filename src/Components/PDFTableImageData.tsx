@@ -3,6 +3,7 @@ import { Tr, Td } from 'react-super-responsive-table';
 import 'react-super-responsive-table/dist/SuperResponsiveTableStyle.css';
 import './PDFStyles.css';
 import { PDFImage } from '../model';
+import PDFImageTable from './PDFImageTable';
 
 interface Props {
     image: PDFImage;
@@ -21,6 +22,7 @@ interface ImageArr {
 
 const PDFTableImageData: React.FC<Props> = ({ image, removeImageData, updateImageData }) => {
     const [imageData, setImageData] = useState<ImageArr>({ _id: image._id, imageURL: image.imageURL, height: image.height, width: image.width, xPosition: image.xPosition, yPosition: image.yPosition })
+    const [isOpen, setIsOpen] = useState<boolean>(false)
 
     useEffect(() => {
         if (imageData._id === null) return;
@@ -38,7 +40,10 @@ const PDFTableImageData: React.FC<Props> = ({ image, removeImageData, updateImag
 
     return (
         <Tr>
-            <Td><input name='imageURL' value={imageData.imageURL} onChange={(e) => handleChange(e.target.value, e.target.name)}></input></Td>
+            <Td>
+                    <button onClick={() => setIsOpen((prevState) => !prevState)}>Choose image</button>
+                    <div style={{ fontSize: "12px"}}>{imageData._id}</div>
+            </Td>
             <Td><input name='height' value={imageData.height} onChange={(e) => handleChange(e.target.value, e.target.name)}></input></Td>
             <Td><input name='width' value={imageData.width} onChange={(e) => handleChange(e.target.value, e.target.name)}></input></Td>
             <Td><input name='xPosition' value={imageData.xPosition} onChange={(e) => handleChange(e.target.value, e.target.name)}></input></Td>
@@ -46,6 +51,7 @@ const PDFTableImageData: React.FC<Props> = ({ image, removeImageData, updateImag
                 <input name='yPosition' value={imageData.yPosition} onChange={(e) => handleChange(e.target.value, e.target.name)}></input>
                 <button onClick={() => removeImageData(imageData._id)}>x</button>
             </Td>
+            <PDFImageTable isOpen={isOpen} setIsOpen={(value: boolean) => setIsOpen(value)} chooseImage={(value: string) => setImageData((prevState) => { return { ...prevState, imageURL: value } })} />
         </Tr>
     )
 }

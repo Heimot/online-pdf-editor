@@ -49,7 +49,7 @@ const App: React.FC = () => {
         if (image.imageURL === "") return;
         let img = new Image();
         img.crossOrigin = "";
-        img.src = image.imageURL;
+        img.src = `http://localhost:5000/files/get_image_by_id?_id=${image.imageURL}&auth=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYzYmJiMjdkMDFlOGQxZjZlMzVmNTFjYSIsImlhdCI6MTY3MzMzMDg3OSwiZXhwIjoxNjc5MzMwODc5fQ.MfhU7s4GCTnV3c6PRd6pSlOcdIBZtmBD_SzrEaFXbkc&currentUserId=63bbb27d01e8d1f6e35f51ca`;
 
         doc.addImage(img, "", Number(image.xPosition), Number(image.yPosition), Number(image.width), Number(image.height));
       })
